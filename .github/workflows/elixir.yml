@@ -17,10 +17,10 @@ permissions:
 jobs:
   build:
     env:
-      ImageOS: ubuntu22 # Corrected value
+      ImageOS: ubuntu22
 
     name: Build and test
-    runs-on: ${{ env.ImageOS }}
+    runs-on: ubuntu22
 
     steps:
     - uses: actions/checkout@v4
