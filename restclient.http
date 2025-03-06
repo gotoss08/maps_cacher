@@ -6,13 +6,12 @@ GET http://localhost:8080/ping
 
 # Test map cache
 
-GET http://localhost:8080/map/google/standart/1/2/3
+GET http://localhost:8080/map/google/standart/13/1325/3143
 
 # REAL Google Maps tiles request
-# User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
 
 GET https://mt1.google.com/vt/lyrs=y&x=1325&y=3143&z=13
-User-Agent: com.example.app
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
 sec-ch-ua-platform: "Windows"
 sec-ch-ua-mobile: ?0
 sec-ch-ua: "Not(A:Brand";v="99", "Google Chrome";v="133",
