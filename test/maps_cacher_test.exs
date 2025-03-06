@@ -1,8 +1,8 @@
-# defmodule MapsCacherTest do
+# defmodule TilesCacherTest do
 #   use ExUnit.Case
-#   doctest MapsCacher
+#   doctest TilesCacher
 
 #   test "greets the world" do
-#     assert MapsCacher.hello() == :world
+#     assert TilesCacher.hello() == :world
 #   end
 # end

@@ -1,18 +1,28 @@
 # -*- mode: restclient; url-max-redirections: 0 -*-
+#
+# TilesCacher
+#
 
-# Ping
+:tile_id = m
+:provider = google
+:tile_type = standard
+:x = 1325
+:y = 3143
+:z = 13
 
-GET http://localhost:8080/ping
+# Test real Google Maps tile service
 
-# Test map cache
-
-GET http://localhost:8080/map/google/standart/13/1325/3143
-
-# REAL Google Maps tiles request
-
-GET https://mt1.google.com/vt/lyrs=y&x=1325&y=3143&z=13
+GET https://mt1.google.com/vt/lyrs=:tile_id&x=:x&y=:y&z=:z
 User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36
 sec-ch-ua-platform: "Windows"
 sec-ch-ua-mobile: ?0
 sec-ch-ua: "Not(A:Brand";v="99", "Google Chrome";v="133",
 upgrade-insecure-requests: 1
+
+# Ping service
+
+GET http://localhost:8080/ping
+
+# Get cached tile
+
+GET http://localhost:8080/tile/:provider/:tile_type/:z/:x/:y

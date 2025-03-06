@@ -1,8 +1,8 @@
-defmodule MapsCacher.RouterTest do
+defmodule TilesCacher.RouterTest do
   use ExUnit.Case
   use Plug.Test
 
-  alias MapsCacher.Router
+  alias TilesCacher.Router
 
   @opts Router.init([])
 

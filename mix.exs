@@ -1,4 +1,4 @@
-defmodule MapsCacher.MixProject do
+defmodule TilesCacher.MixProject do
   use Mix.Project
 
   def project do
@@ -7,7 +7,8 @@ defmodule MapsCacher.MixProject do
       version: "0.1.0",
       elixir: "~> 1.18",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_options: [warnings_as_errors: true]
     ]
   end
 
@@ -15,7 +16,7 @@ defmodule MapsCacher.MixProject do
   def application do
     [
       extra_applications: [:logger],
-      mod: {MapsCacher.Application, []}
+      mod: {TilesCacher.Application, []}
     ]
   end
 

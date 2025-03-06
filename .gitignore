@@ -21,3 +21,9 @@ maps_cacher-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# elixir_ls
+/.elixir_ls/
+
+# Cached tiles folder
+/tiles/

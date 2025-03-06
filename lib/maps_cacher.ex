@@ -1,23 +1,48 @@
-defmodule MapsCacher do
+defmodule TilesCacher do
+  require Logger
+
   def fetch_tile(provider, type, z, x, y) do
-    download_tile(provider, type, z, x, y)
-  end
+    path = get_tile_cache_path(provider, type, z, x, y)
 
-  defp has_cahced_tile(provider, type, z, x, y) do
-  end
+    # Ensure directory exists
+    path
+    |> Path.dirname()
+    |> File.mkdir_p!()
 
-  defp get_from_cache(provider, type, z, x, y) do
-  end
+    # Check if file exists
+    if File.exists?(path) do
+      case File.read(path) do
+        {:ok, data} ->
+          Logger.info("Serving tile: \"#{path}\" from local cache")
+          {:ok, %{content_type: "image/jpeg", data: data}}
 
-  defp resolve_type(provider, type) when provider == "google" do
-    case type do
-      "standart" -> "y"
+        {:error, reason} ->
+          Logger.error("Failed to read existing file: #{inspect(reason)}")
+          download_tile(provider, type, z, x, y)
+      end
+    else
+      # Tile doesn't exist, download it
+      download_tile(provider, type, z, x, y)
     end
   end
 
-  defp resolve_type(provider, type), do: type
+  defp get_tile_cache_path(provider, type, z, x, y),
+    do: "tiles/#{provider}/#{type}/#{z}/#{x}/#{y}.jpeg"
+
+  defp resolve_type(provider, type) when provider == "google" do
+    case type do
+      "standard" -> "m"
+      "satellite" -> "s"
+      "hybrid" -> "y"
+      "terrain" -> "p"
+    end
+  end
+
+  defp resolve_type(_, type), do: type
 
   defp download_tile(provider, type, z, x, y) when provider == "google" do
+    Logger.info("Downloading tile: \"#{provider}/#{type}/#{z}/#{x}/#{y}\"")
+
     pattern = "https://mt1.google.com/vt/lyrs={type}&x={x}&y={y}&z={z}"
 
     request_url =
@@ -26,6 +51,8 @@ defmodule MapsCacher do
       |> String.replace("{x}", x)
       |> String.replace("{y}", y)
       |> String.replace("{z}", z)
+
+    Logger.info("Google Maps request: \"#{request_url}\"")
 
     headers = [
       user_agent:
@@ -36,12 +63,24 @@ defmodule MapsCacher do
       upgrade_insecure_requests: "1"
     ]
 
-    Req.get(request_url, headers: headers)
-    |> handle_response
+    # Get tile from server
+    resp =
+      Req.get(request_url, headers: headers)
+      |> handle_response
+
+    case resp do
+      {:ok, tile} ->
+        # Write binary data to a file
+        path = get_tile_cache_path(provider, type, z, x, y)
+        File.write(path, tile.data, [:write])
+        Logger.info("Cached tile: \"#{path}\"")
+    end
+
+    resp
   end
 
-  defp download_tile(provider, type, z, x, y) when provider == 'openstreetmaps' do
-    raise RuntimeError, "MapsCacher.download_tile/5 is not implemented yet"
+  defp download_tile(provider, _type, _z, _x, _y) when provider == "osm" do
+    raise RuntimeError, "TilesCacher.download_tile/5 for OSM is not implemented yet"
   end
 
   # Response handlers
@@ -55,13 +94,7 @@ defmodule MapsCacher do
   defp handle_response({:ok, resp}),
     do: return_error("Google maps service status: #{resp.status}")
 
-  defp handle_response({:error, exception}) do
-    {:error, {502, exception}}
-  end
-
-  defp handle_response(_) do
-    {:error, {502, "Unknown error"}}
-  end
+  defp handle_response({:error, exception}), do: return_error(exception)
 
   # Error handlers
 
