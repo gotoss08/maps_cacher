@@ -23,7 +23,8 @@ defmodule MapsCacher.MixProject do
   defp deps do
     [
       {:exsync, "~> 0.4.1", only: :dev},
-      {:plug_cowboy, "~> 2.7"}
+      {:plug_cowboy, "~> 2.7"},
+      {:req, "~> 0.5.8"}
     ]
   end
 end
