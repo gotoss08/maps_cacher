@@ -47,19 +47,14 @@ defmodule TilesCacher do
 
   defp resolve_type(_, type), do: type
 
-  defp download_tile(
-         %{
-           provider: provider,
-           type: type,
-           x: x,
-           y: y,
-           z: z,
-           img_extension: img_extension
-         } = request_tile_data
-       )
+  defp resolve_tile_download_url(%{
+         provider: provider,
+         type: type,
+         x: x,
+         y: y,
+         z: z
+       })
        when provider == "google" do
-    Logger.info("Downloading tile: \"#{provider}/#{type}/#{z}/#{x}/#{y}.#{img_extension}\"")
-
     pattern = "https://mt1.google.com/vt/lyrs={type}&x={x}&y={y}&z={z}"
 
     request_url =
@@ -71,9 +66,60 @@ defmodule TilesCacher do
 
     Logger.info("Google Maps request: \"#{request_url}\"")
 
+    request_url
+  end
+
+  defp resolve_tile_download_url(%{
+         provider: provider,
+         x: x,
+         y: y,
+         z: z
+       })
+       when provider == "osm" do
+    pattern = "https://tile.openstreetmap.org/{z}/{x}/{y}.png"
+
+    request_url =
+      pattern
+      |> String.replace("{x}", x)
+      |> String.replace("{y}", y)
+      |> String.replace("{z}", z)
+
+    Logger.info("OSM request: \"#{request_url}\"")
+
+    request_url
+  end
+
+  defp resolve_tile_download_url(%{
+         provider: provider
+       }) do
+    raise RuntimeError,
+          "TilesCacher.download_tile/5 for provider \"#{provider}\" is not implemented yet"
+  end
+
+  defp resolve_user_agent(provider) when provider == "osm" do
+    "huntermap-tiles-cacher"
+  end
+
+  defp resolve_user_agent(_) do
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+  end
+
+  defp download_tile(
+         %{
+           provider: provider,
+           type: type,
+           x: x,
+           y: y,
+           z: z,
+           img_extension: img_extension
+         } = request_tile_data
+       ) do
+    Logger.info("Downloading tile: \"#{provider}/#{type}/#{z}/#{x}/#{y}/#{img_extension}\"")
+
+    request_url = resolve_tile_download_url(request_tile_data)
+
     headers = [
-      user_agent:
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36",
+      user_agent: resolve_user_agent(provider),
       sec_ch_ua_platform: "Windows",
       sec_ch_ua_mobile: "?0",
       sec_ch_ua: "\"Not(A:Brand\";v=\"99\", \"Google Chrome\";v=\"133\"",
@@ -91,15 +137,11 @@ defmodule TilesCacher do
         path = get_tile_cache_path(request_tile_data)
         File.write(path, tile.data, [:write])
         Logger.info("Cached tile: \"#{path}\"")
+        resp
 
       _ ->
         resp
     end
-  end
-
-  defp download_tile(request_tile_data)
-       when request_tile_data.provider == "osm" do
-    raise RuntimeError, "TilesCacher.download_tile/5 for OSM is not implemented yet"
   end
 
   # Response handlers
@@ -111,7 +153,7 @@ defmodule TilesCacher do
   end
 
   defp handle_response({:ok, resp}),
-    do: return_error("Google maps service status: #{resp.status}")
+    do: return_error("Tile map service status: #{resp.status}")
 
   defp handle_response({:error, exception}), do: return_error(exception)
 
