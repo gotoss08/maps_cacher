@@ -1,33 +1,40 @@
 defmodule TilesCacher do
   require Logger
 
-  def fetch_tile(provider, type, z, x, y) do
-    path = get_tile_cache_path(provider, type, z, x, y)
+  def fetch_tile(request_tile_data) do
+    tile_img_path = get_tile_cache_path(request_tile_data)
 
     # Ensure directory exists
-    path
+    tile_img_path
     |> Path.dirname()
     |> File.mkdir_p!()
 
     # Check if file exists
-    if File.exists?(path) do
-      case File.read(path) do
+    if File.exists?(tile_img_path) do
+      case File.read(tile_img_path) do
         {:ok, data} ->
-          Logger.info("Serving tile: \"#{path}\" from local cache")
-          {:ok, %{content_type: "image/jpeg", data: data}}
+          Logger.info("Serving tile: \"#{tile_img_path}\" from local cache")
+          {:ok, %{content_type: MIME.type(request_tile_data.img_extension), data: data}}
 
         {:error, reason} ->
           Logger.error("Failed to read existing file: #{inspect(reason)}")
-          download_tile(provider, type, z, x, y)
+          download_tile(request_tile_data)
       end
     else
       # Tile doesn't exist, download it
-      download_tile(provider, type, z, x, y)
+      download_tile(request_tile_data)
     end
   end
 
-  defp get_tile_cache_path(provider, type, z, x, y),
-    do: "tiles/#{provider}/#{type}/#{z}/#{x}/#{y}.jpeg"
+  defp get_tile_cache_path(%{
+         provider: provider,
+         type: type,
+         x: x,
+         y: y,
+         z: z,
+         img_extension: img_extension
+       }),
+       do: "tiles/#{provider}/#{type}/#{z}/#{x}/#{y}.#{img_extension}"
 
   defp resolve_type(provider, type) when provider == "google" do
     case type do
@@ -40,8 +47,18 @@ defmodule TilesCacher do
 
   defp resolve_type(_, type), do: type
 
-  defp download_tile(provider, type, z, x, y) when provider == "google" do
-    Logger.info("Downloading tile: \"#{provider}/#{type}/#{z}/#{x}/#{y}\"")
+  defp download_tile(
+         %{
+           provider: provider,
+           type: type,
+           x: x,
+           y: y,
+           z: z,
+           img_extension: img_extension
+         } = request_tile_data
+       )
+       when provider == "google" do
+    Logger.info("Downloading tile: \"#{provider}/#{type}/#{z}/#{x}/#{y}.#{img_extension}\"")
 
     pattern = "https://mt1.google.com/vt/lyrs={type}&x={x}&y={y}&z={z}"
 
@@ -71,15 +88,17 @@ defmodule TilesCacher do
     case resp do
       {:ok, tile} ->
         # Write binary data to a file
-        path = get_tile_cache_path(provider, type, z, x, y)
+        path = get_tile_cache_path(request_tile_data)
         File.write(path, tile.data, [:write])
         Logger.info("Cached tile: \"#{path}\"")
-    end
 
-    resp
+      _ ->
+        resp
+    end
   end
 
-  defp download_tile(provider, _type, _z, _x, _y) when provider == "osm" do
+  defp download_tile(request_tile_data)
+       when request_tile_data.provider == "osm" do
     raise RuntimeError, "TilesCacher.download_tile/5 for OSM is not implemented yet"
   end
 
